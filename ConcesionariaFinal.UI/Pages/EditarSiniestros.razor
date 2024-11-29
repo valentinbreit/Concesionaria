@@ -1,0 +1,103 @@
+@page "/siniestro/{Id:int?}"
+@inject ObtenerSiniestroUseCase ObtenerSiniestroUseCase
+@inject ModificarSiniestroUseCase ModificarSiniestroUseCase
+@inject NavigationManager Navegador;
+@inject AgregarSiniestroUseCase AgregarSiniestroUseCase
+@using ConcesionariaFinal.UI.Pages
+@inject ListarPolizaUseCase ListarPolizaUseCase
+@*Necesario para el <select> del formulario*@
+
+<DialogoAdvertencia @ref="dialogo" />
+
+<Index/>
+@if (_esNuevoSiniestro)
+{
+   <h4>Agregando un nuevo siniestro</h4>
+}
+else
+{
+   <h4>Modificando el siniestro "@_siniestro.Id"</h4>
+} 
+
+<div>
+    <label for="PolizaId">Poliza: 
+        <select name="PolizaId" @bind="_siniestro.PolizaId">
+        @foreach (var poliza in polizas)
+        {
+            <option value="@poliza.Id"> @poliza.Id: @poliza.FechaInicio.ToShortDateString() - @poliza.FechaFin.ToShortDateString()</option>
+        }
+    </select>
+    </label>
+</div>
+<div>
+    <label for="FechaDeIngreso">Fecha de ingreso: <input type="date" name="FechaDeIngreso" @bind ="_siniestro.FechaIngreso"/>
+    </label>
+</div>
+<div>
+    <label for="FechaDeOcurrencia">Fecha de ocurrencia: <InputDate name="FechaDeOcurrencia" @bind-Value ="_siniestro.FechaOcurrencia"/>
+    </label>
+    
+</div>
+<div>
+    <label for="Direccion">Direccion: </label>
+    <input name="Direccion" @bind="_siniestro.Direccion" class="form-control">
+</div>
+<div>
+    <label for="Descripcion">Descripcion: </label>
+    <input name="Descripcion" @bind="_siniestro.Descripcion" class="form-control">
+</div>
+<div>
+    <button class="btn btn-primary" @onclick="Aceptar">Aceptar</button>
+</div>
+
+@code {
+    Siniestro _siniestro = new Siniestro();
+    [Parameter] public int? Id { get; set; }
+    DialogoAdvertencia dialogo = null!;
+    bool _esNuevoSiniestro = true;
+    List<Poliza> polizas = new List<Poliza>();      //Necesario para el <select> del formulario
+    protected override void OnInitialized()         //Necesario para el <select> del formulario
+    {
+        polizas = ListarPolizaUseCase.Ejecutar();   //Inicializamos para que se muestren las polizas vigentes en el <select>
+        _siniestro.FechaIngreso = DateTime.Now;     //Inicializamos para que aparezca bien en el formulario
+        _siniestro.FechaOcurrencia = DateTime.Now;  //Inicializamos para que aparezca bien en el formulario
+    }
+    protected override void OnParametersSet()
+    {
+        if (Id != null)
+        {
+            var siniestro_hallado = ObtenerSiniestroUseCase.Ejecutar(Id.Value);
+            if (siniestro_hallado != null)
+            {
+                _siniestro = siniestro_hallado;
+                _esNuevoSiniestro = false;
+            }
+        }
+    }
+      void Aceptar()
+   {
+        try
+        {
+            if (_esNuevoSiniestro)
+            {
+                AgregarSiniestroUseCase.Ejecutar(_siniestro);
+            }
+            else
+            {
+                ModificarSiniestroUseCase.Ejecutar(_siniestro);
+            }
+            _siniestro = new Siniestro();
+            Navegador.NavigateTo("listadosiniestros");
+        }
+        catch (Exception e)
+        {
+            ErrorTitular(e);
+        }
+   }  
+
+    private void ErrorTitular(Exception e)
+    {
+        dialogo.Mensaje = e.Message;
+        dialogo.Mostrar();
+    }
+}

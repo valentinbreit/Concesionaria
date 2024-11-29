@@ -1,0 +1,75 @@
+@page "/listadotitulares"
+@inject ListarTitularUseCase ListarTitularUseCase
+@inject IJSRuntime JsRuntime;
+@inject EliminarTitularUseCase EliminarTitularUseCase
+@inject NavigationManager Navegador
+@using ConcesionariaFinal.UI.Pages
+<Index/>
+<DialogoConfirmacion @ref="dialogo" OnConfirmado="Eliminar"/>
+<table class="table">
+   <thead>
+       <tr>
+           <th>ID</th>
+           <th>DNI</th>
+           <th>APELLIDO</th>
+           <th>NOMBRE</th>
+           <th>TELEFONO</th>
+           <th>DIRECCION</th>
+           <th>CORREO</th>
+           <th>ACCIÓN</th>
+       </tr>
+   </thead>
+   <tbody>
+       @foreach (var titular in _lista)
+       {
+           <tr>
+               <td>@titular.Id</td>
+               <td>@titular.Dni</td>
+               <td>@titular.Apellido</td>
+               <td>@titular.Nombre</td>
+               <td>@titular.Telefono</td>
+               <td>@titular.Direccion</td>
+               <td>@titular.Correo</td>
+               <td>
+                    <button class="btn btn-primary" @onclick="()=>ModificarTitular(titular)">
+                        <span class="oi oi-pencil"></span>
+                    </button>
+                    <button class="btn btn-danger" @onclick="()=>ConfirmarEliminacion(titular)">
+                        <span class="oi oi-trash"></span>
+                    </button>
+                </td>
+           </tr>
+       }
+   </tbody>
+</table>
+
+@code {
+    List<Titular> _lista = new List<Titular>();
+    protected override void OnInitialized()
+    {
+        _lista = ListarTitularUseCase.Ejecutar();
+    }
+
+    DialogoConfirmacion dialogo = null!;
+    Titular? _TitularParaEliminar = null;
+
+    private void ModificarTitular(Titular titular)
+    {
+        Navegador.NavigateTo($"titular/{titular.Id}");
+    }
+
+    private void ConfirmarEliminacion(Titular titular)
+    {
+        _TitularParaEliminar = titular;
+        dialogo.Mensaje = $"¿Desea eliminar el titular de id {titular.Id}?";
+        dialogo.Mostrar();
+    }
+    private void Eliminar()
+    {
+        if (_TitularParaEliminar != null)
+        {
+            EliminarTitularUseCase.Ejecutar(_TitularParaEliminar.Id);
+            _lista = ListarTitularUseCase.Ejecutar();
+        }
+    }
+}

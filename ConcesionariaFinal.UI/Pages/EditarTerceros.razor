@@ -1,0 +1,105 @@
+@page "/tercero/{Id:int?}"
+@inject ObtenerTerceroUseCase ObtenerTerceroUseCase
+@inject ModificarTerceroUseCase ModificarTerceroUseCase
+@inject NavigationManager Navegador;
+@inject AgregarTerceroUseCase AgregarTerceroUseCase
+@inject ListarSiniestroUseCase ListarSiniestroUseCase
+@using ConcesionariaFinal.UI.Pages
+@*Necesario para el <select> del formulario*@
+
+<DialogoAdvertencia @ref="dialogo" />
+
+<Index/>
+
+@if (_esNuevoTercero)
+{
+   <h4>Agregando un nuevo tercero</h4>
+}
+else
+{
+   <h4>Modificando el tercero "@_tercero.Id"</h4>
+}
+
+<div>
+    <label for="SiniestroId">Siniestro: 
+        <select name="SiniestroId" @bind="_tercero.SiniestroId">
+            @foreach (var siniestro in siniestros)
+            {
+                <option value="@siniestro.Id"> @siniestro.Id: @siniestro.FechaOcurrencia.ToShortDateString() @siniestro.Direccion</option>
+            }
+        </select>
+    </label>
+</div>
+<div>
+    <label for="DNI">DNI: </label>
+    <input name="DNI" @bind="_tercero.Dni" class="form-control">
+</div>
+<div>
+    <label for="Apellido">Apellido: </label>
+    <input name="Apellido" @bind="_tercero.Apellido" class="form-control">
+</div>
+<div>
+    <label for="Nombre">Nombre: </label>
+    <input name="Nombre" @bind="_tercero.Nombre" class="form-control">
+</div>
+<div>
+    <label for="Telefono">Telefono: </label>
+    <input name="Telefono" @bind="_tercero.Telefono" class="form-control">
+</div>
+<div>
+    <label for="NombreDeAseguradora">Nombre de aseguradora: </label>
+    <input name="Nombre de aseguradora" @bind="_tercero.nombreAseguradora" class="form-control">
+</div>
+<div>
+    <button class="btn btn-primary" @onclick="Aceptar">Aceptar</button>
+</div>
+
+@code {
+    Tercero _tercero = new Tercero();
+    [Parameter] public int? Id { get; set; }
+    DialogoAdvertencia dialogo = null!;
+    bool _esNuevoTercero = true;
+    List<Siniestro> siniestros = new List<Siniestro>();     //Necesario para el <select> del formulario
+    protected override void OnInitialized()                 //Necesario para el <select> del formulario
+    {
+        siniestros = ListarSiniestroUseCase.Ejecutar();
+    }
+    protected override void OnParametersSet()
+    {
+        if (Id != null)
+        {
+            var tercero_hallado = ObtenerTerceroUseCase.Ejecutar(Id.Value);
+            if (tercero_hallado != null)
+            {
+                _tercero = tercero_hallado;
+                _esNuevoTercero = false;
+            }
+        }
+    }
+      void Aceptar()
+   {
+        try
+        {
+            if (_esNuevoTercero)
+            {
+                AgregarTerceroUseCase.Ejecutar(_tercero);
+            }
+            else
+            {
+                ModificarTerceroUseCase.Ejecutar(_tercero);
+            }
+            _tercero = new Tercero();
+            Navegador.NavigateTo("listadoterceros");
+        }
+        catch (Exception e)
+        {
+            Errorsiniestro(e);
+        }
+   }  
+
+    private void Errorsiniestro(Exception e)
+    {
+        dialogo.Mensaje = e.Message;
+        dialogo.Mostrar();
+    } 
+}

@@ -1,0 +1,94 @@
+@page "/titular/{Id:int?}"
+@inject ObtenerTitularUseCase ObtenerTitularUseCase
+@inject ModificarTitularUseCase ModificarTitularUseCase
+@inject NavigationManager Navegador;
+@inject AgregarTitularUseCase AgregarTitularUseCase
+
+@using ConcesionariaFinal.UI.Pages
+<DialogoAdvertencia @ref="dialogo" />
+
+<Index/>
+
+@if (_esNuevoTitular)
+{
+   <h4>Agregando un nuevo titular</h4>
+}
+else
+{
+   <h4>Modificando el titular "@_titular.Id"</h4>
+}
+
+
+
+<div>
+    <label for="DNI">DNI: </label>
+    <input name="DNI" @bind="_titular.Dni" class="form-control">
+</div>
+<div>
+    <label for="Apellido">Apellido: </label>
+    <input name="Apellido" @bind="_titular.Apellido" class="form-control">
+</div>
+<div>
+    <label for="Nombre">Nombre: </label>
+    <input name="Nombre" @bind="_titular.Nombre" class="form-control">
+</div>
+<div>
+    <label for="Telefono">Telefono: </label>
+    <input name="Telefono" @bind="_titular.Telefono" class="form-control">
+</div>
+<div>
+    <label for="Direccion">Direccion: </label>
+    <input name="Direccion" @bind="_titular.Direccion" class="form-control">
+</div>
+<div>
+    <label for="Correo">Correo: </label>
+    <input name="Correo" @bind="_titular.Correo" class="form-control">
+</div>
+<div>
+    <button class="btn btn-primary" @onclick="Aceptar">Aceptar</button>
+</div>
+
+@code {
+    Titular _titular = new Titular();
+    [Parameter] public int? Id { get; set; }
+    DialogoAdvertencia dialogo = null!;
+    bool _esNuevoTitular = true;
+    protected override void OnParametersSet()
+    {
+        if (Id != null)
+        {
+            var titular_hallado = ObtenerTitularUseCase.Ejecutar(Id.Value);
+            if (titular_hallado != null)
+            {
+                _titular = titular_hallado;
+                _esNuevoTitular = false;
+            }
+        }
+    }
+    private void Aceptar()
+    {
+        try
+        {
+            if (_esNuevoTitular)
+            {
+                AgregarTitularUseCase.Ejecutar(_titular);
+            }
+            else
+            {
+                ModificarTitularUseCase.Ejecutar(_titular);
+            }
+            _titular = new Titular();
+            Navegador.NavigateTo("listadotitulares");
+        }
+        catch (Exception e)
+        {
+            ErrorTitular(e);
+        }
+    }
+
+    private void ErrorTitular(Exception e)
+    {
+        dialogo.Mensaje = e.Message;
+        dialogo.Mostrar();
+    }
+}

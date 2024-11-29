@@ -1,0 +1,75 @@
+@page "/listadoterceros"
+@inject ListarTerceroUseCase ListarTerceroUseCase
+@inject IJSRuntime JsRuntime;
+@inject EliminarTerceroUseCase EliminarTerceroUseCase
+@inject NavigationManager Navegador
+@using ConcesionariaFinal.UI.Pages
+<Index/>
+<DialogoConfirmacion @ref="dialogo" OnConfirmado="Eliminar"/>
+<table class="table">
+   <thead>
+       <tr>
+           <th>ID</th>
+           <th>DNI</th>
+           <th>APELLIDO</th>
+           <th>NOMBRE</th>
+           <th>TELEFONO</th>
+           <th>NOMBRE DE ASEGURADORA</th>
+           <th>SINIESTRO ID</th>
+           <th>ACCIÓN</th>
+       </tr>
+   </thead>
+   <tbody>
+       @foreach (var tercero in _lista)
+       {
+           <tr>
+               <td>@tercero.Id</td>
+               <td>@tercero.Dni</td>
+               <td>@tercero.Apellido</td>
+               <td>@tercero.Nombre</td>
+               <td>@tercero.Telefono</td>
+               <td>@tercero.nombreAseguradora</td>
+               <td>@tercero.SiniestroId</td>
+               <td>
+                    <button class="btn btn-primary" @onclick="()=>ModificarTercero(tercero)">
+                        <span class="oi oi-pencil"></span>
+                    </button>
+                    <button class="btn btn-danger" @onclick="()=>ConfirmarEliminacion(tercero)">
+                        <span class="oi oi-trash"></span>
+                    </button>
+                </td>
+           </tr>
+       }
+   </tbody>
+</table>
+
+@code {
+    List<Tercero> _lista = new List<Tercero>();
+    protected override void OnInitialized()
+    {
+        _lista = ListarTerceroUseCase.Ejecutar();
+    }
+
+    DialogoConfirmacion dialogo = null!;
+    Tercero? _TerceroParaEliminar = null;
+
+    private void ModificarTercero(Tercero tercero)
+    {
+        Navegador.NavigateTo($"tercero/{tercero.Id}");
+    }
+
+    private void ConfirmarEliminacion(Tercero tercero)
+    {
+        _TerceroParaEliminar = tercero;
+        dialogo.Mensaje = $"¿Desea eliminar el tercero de id {tercero.Id}?";
+        dialogo.Mostrar();
+    }
+    private void Eliminar()
+    {
+        if (_TerceroParaEliminar != null)
+        {
+            EliminarTerceroUseCase.Ejecutar(_TerceroParaEliminar.Id);
+            _lista = ListarTerceroUseCase.Ejecutar();
+        }
+    }
+}

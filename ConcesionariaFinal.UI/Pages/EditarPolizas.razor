@@ -1,0 +1,112 @@
+@page "/poliza/{Id:int?}"
+@inject ObtenerPolizaUseCase ObtenerPolizaUseCase
+@inject ModificarPolizaUseCase ModificarPolizaUseCase
+@inject NavigationManager Navegador;
+@inject AgregarPolizaUseCase AgregarPolizaUseCase
+@inject ListarVehiculoUseCase ListarVehiculoUseCase
+@using ConcesionariaFinal.UI.Pages
+@*Necesario para el <select> del formulario*@
+
+<DialogoAdvertencia @ref="dialogo" />
+
+<Index/>
+
+
+@if (_esNuevaPoliza)
+{
+   <h4>Agregando una nueva poliza</h4>
+}
+else
+{
+   <h4>Modificando la poliza "@_poliza.Id"</h4>
+}
+
+<div>
+    <label for="VehiculoId">Vehiculo: 
+        <select name="VehiculoId" @bind="_poliza.VehiculoId">
+            @foreach (var vehiculo in vehiculos)
+            {
+                <option value="@vehiculo.Id"> @vehiculo.Id: @vehiculo.Marca @vehiculo.AñoFabricacion</option>
+            }
+        </select>
+    </label>
+</div>
+<div>
+    <label for="ValorAsegurado">Valor asegurado: </label>
+    <input name="ValorAsegurado" @bind="_poliza.ValorAsegurado" class="form-control"/>
+</div>
+<div>
+    <label for="Franquicia">Franquicia: </label>
+    <input name="Franquicia" @bind="_poliza.Franquicia" class="form-control" />
+</div>
+<div>
+    <label for="Cobertura">Cobertura: </label>
+    <input name="Cobertura" @bind="_poliza.Cobertura" class="form-control" />
+</div>
+<div>
+    <label for= "FechaDeInicio">Fecha de inicio<InputDate name = "FechaDeInicio" @bind-Value ="_poliza.FechaInicio" />
+    </label>
+    
+</div>
+<div>
+    <label for= "FechaDeFin">Fecha de fin<InputDate name = "FechaDeFin" @bind-Value ="_poliza.FechaFin" />
+    </label>
+</div>
+<div>
+    <button class="btn btn-primary" @onclick="Aceptar">Aceptar</button>
+</div>
+
+@code {
+    Poliza _poliza = new Poliza();
+    [Parameter] public int? Id { get; set; }
+    DialogoAdvertencia dialogo = null!;
+    bool _esNuevaPoliza = true;
+    
+    List<Vehiculo> vehiculos = new List<Vehiculo>();    //Necesario para el <select> del formulario
+    protected override void OnInitialized()             //Necesario para el <select> del formulario
+    {
+        vehiculos = ListarVehiculoUseCase.Ejecutar();   //Inicializamos para que se muestren los vehiculos vigentes en el <select>
+        _poliza.FechaInicio = DateTime.Now;             //Inicializamos para que aparezca bien en el formulario
+        _poliza.FechaFin = DateTime.Now;                //Inicializamos para que aparezca bien en el formulario
+    }
+
+    protected override void OnParametersSet()
+    {
+        if (Id != null)
+        {
+            var poliza_hallada = ObtenerPolizaUseCase.Ejecutar(Id.Value);
+            if (poliza_hallada != null)
+            {
+                _poliza = poliza_hallada;
+                _esNuevaPoliza = false;
+            }
+        }
+    }
+      void Aceptar()
+   {
+        try
+        {
+            if (_esNuevaPoliza)
+            {
+                AgregarPolizaUseCase.Ejecutar(_poliza);
+            }
+            else
+            {
+                ModificarPolizaUseCase.Ejecutar(_poliza);
+            }
+            _poliza = new Poliza();
+            Navegador.NavigateTo("listadopolizas");
+        }
+        catch (Exception e)
+        {
+            ErrorPoliza(e);
+        }
+   }
+
+    private void ErrorPoliza(Exception e)
+    {
+        dialogo.Mensaje = e.Message;
+        dialogo.Mostrar();
+    }
+    
+}

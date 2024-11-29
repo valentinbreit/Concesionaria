@@ -1,0 +1,73 @@
+@page "/listadosiniestros"
+@inject ListarSiniestroUseCase ListarSiniestroUseCase
+@inject IJSRuntime JsRuntime;
+@inject EliminarSiniestroUseCase EliminarSiniestroUseCase
+@inject NavigationManager Navegador
+@using ConcesionariaFinal.UI.Pages
+<Index/>
+<DialogoConfirmacion @ref="dialogo" OnConfirmado="Eliminar"/>
+<table class="table">
+   <thead>
+       <tr>
+           <th>ID</th>
+           <th>FECHA DE INGRESO</th>
+           <th>FECHA DE OCURRENCIA</th>
+           <th>DIRECCION</th>
+           <th>DESCRIPCION</th>
+           <th>POLIZA ID</th>
+           <th>ACCIÓN</th>
+       </tr>
+   </thead>
+   <tbody>
+       @foreach (var siniestro in _lista)
+       {
+           <tr>
+               <td>@siniestro.Id</td>
+               <td>@siniestro.FechaIngreso.ToShortDateString()</td>
+               <td>@siniestro.FechaOcurrencia.ToShortDateString()</td>
+               <td>@siniestro.Direccion</td>
+               <td>@siniestro.Descripcion</td>
+               <td>@siniestro.PolizaId</td>
+               <td>
+                    <button class="btn btn-primary" @onclick="()=>ModificarSiniestro(siniestro)">
+                        <span class="oi oi-pencil"></span>
+                    </button>
+                    <button class="btn btn-danger" @onclick="()=>ConfirmarEliminacion(siniestro)">
+                        <span class="oi oi-trash"></span>
+                    </button>
+                </td>
+           </tr>
+       }
+   </tbody>
+</table>
+
+@code {
+    List<Siniestro> _lista = new List<Siniestro>();
+    protected override void OnInitialized()
+    {
+        _lista = ListarSiniestroUseCase.Ejecutar();
+    }
+
+    DialogoConfirmacion dialogo = null!;
+    Siniestro? _SiniestroParaEliminar = null;
+
+    private void ModificarSiniestro(Siniestro siniestro)
+    {
+        Navegador.NavigateTo($"siniestro/{siniestro.Id}");
+    }
+
+    private void ConfirmarEliminacion(Siniestro siniestro)
+    {
+        _SiniestroParaEliminar = siniestro;
+        dialogo.Mensaje = $"¿Desea eliminar el siniestro de id {siniestro.Id}?";
+        dialogo.Mostrar();
+    }
+    private void Eliminar()
+    {
+        if (_SiniestroParaEliminar != null)
+        {
+            EliminarSiniestroUseCase.Ejecutar(_SiniestroParaEliminar.Id);
+            _lista = ListarSiniestroUseCase.Ejecutar();
+        }
+    }
+}

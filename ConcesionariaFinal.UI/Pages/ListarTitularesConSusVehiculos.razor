@@ -1,0 +1,44 @@
+@page "/listadovehiculosdetitular"
+@inject ListarTitularUseCase ListarTitularUseCase
+@inject ListarTitularesConSusVehiculosUseCase ListarTitularesConSusVehiculosUseCase
+@inject IJSRuntime JsRuntime
+@inject NavigationManager Navegador
+@using ConcesionariaFinal.UI.Pages
+<Index/>
+
+
+@foreach (Titular t in _titulares)
+{
+    @if ((t.Vehiculos != null) && (t.Vehiculos.Count != 0)) {
+        <h2>@t.Apellido @t.Nombre - @t.Dni</h2>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>DOMINIO</th>
+                    <th>MARCA</th>
+                    <th>AÑO DE FABRICACION</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var vehiculo in t.Vehiculos)
+                {
+                    <tr>
+                        <td>@vehiculo.Id</td>
+                        <td>@vehiculo.Dominio</td>
+                        <td>@vehiculo.Marca</td>
+                        <td>@vehiculo.AñoFabricacion</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+}
+
+@code {
+    List<Titular> _titulares = new List<Titular>();
+    protected override void OnInitialized()
+    {
+        _titulares = ListarTitularesConSusVehiculosUseCase.Ejecutar();
+    }
+}

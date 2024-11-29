@@ -1,0 +1,98 @@
+@page "/vehiculo/{Id:int?}"
+@inject ObtenerVehiculoUseCase ObtenerVehiculoUseCase
+@inject ModificarVehiculoUseCase ModificarVehiculoUseCase
+@inject NavigationManager Navegador;
+@inject AgregarVehiculoUseCase AgregarVehiculoUseCase
+@inject ListarTitularUseCase ListarTitularUseCase
+@using ConcesionariaFinal.UI.Pages
+@*Necesario para el <select> del formulario*@
+
+<DialogoAdvertencia @ref="dialogo" />
+<Index/>
+
+@if (_esNuevoVehiculo)
+{
+   <h4>Agregando un nuevo vehiculo</h4>
+}
+else
+{
+   <h4>Modificando el vehiculo "@_vehiculo.Id"</h4>
+} 
+
+<div>
+    <label for="TitularId">Titular: 
+    <select name="TitularId" @bind="_vehiculo.TitularId">
+        @foreach (var titular in titulares)
+        {
+            <option value="@titular.Id"> @titular.Dni - @titular.Apellido @titular.Nombre</option>
+        }
+    </select>
+    </label>
+</div>
+<div>
+    <label for="Dominio">Dominio: </label>
+    <input name="Dominio" @bind="_vehiculo.Dominio" class="form-control">
+</div>
+<div>
+    <label for="Marca">Marca: </label>
+    <input name="Marca" @bind="_vehiculo.Marca" class="form-control">
+</div>
+<div>
+    <label for="Año">Año: </label>
+    <input name="Año" @bind="_vehiculo.AñoFabricacion" class="form-control">
+</div>
+<div>
+    <button class="btn btn-primary" @onclick="Aceptar">Aceptar</button>
+</div>
+
+@code {
+    Vehiculo _vehiculo = new Vehiculo();
+    DialogoAdvertencia dialogo = null!;
+    [Parameter] public int? Id { get; set; }
+    bool _esNuevoVehiculo = true;
+    List<Titular> titulares = new List<Titular>();      //Necesario para el <select> del formulario
+    protected override void OnInitialized()             //Necesario para el <select> del formulario
+    {
+        titulares = ListarTitularUseCase.Ejecutar();
+    }
+
+    protected override void OnParametersSet()
+    {
+        if (Id != null)
+        {
+            var vehiculo_hallado = ObtenerVehiculoUseCase.Ejecutar(Id.Value);
+            if (vehiculo_hallado != null)
+            {
+                _vehiculo = vehiculo_hallado;
+                _esNuevoVehiculo = false;
+            }
+        }
+    }
+
+   void Aceptar()
+   {
+        try
+        {
+            if (_esNuevoVehiculo)
+            {
+                AgregarVehiculoUseCase.Ejecutar(_vehiculo);
+            }
+            else
+            {
+                ModificarVehiculoUseCase.Ejecutar(_vehiculo);
+            }
+            _vehiculo = new Vehiculo();
+            Navegador.NavigateTo("listadovehiculos");
+        }
+        catch (Exception e)
+        {
+            ErrorTitular(e);
+        }
+   }  
+
+    private void ErrorTitular(Exception e)
+    {
+        dialogo.Mensaje = e.Message;
+        dialogo.Mostrar();
+    }
+}

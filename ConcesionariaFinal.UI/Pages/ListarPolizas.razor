@@ -1,0 +1,75 @@
+@page "/listadopolizas"
+@inject ListarPolizaUseCase ListarPolizaUseCase
+@inject IJSRuntime JsRuntime;
+@inject EliminarPolizaUseCase EliminarPolizaUseCase
+@inject NavigationManager Navegador
+@using ConcesionariaFinal.UI.Pages
+<Index/>
+<DialogoConfirmacion @ref="dialogo" OnConfirmado="Eliminar"/>
+<table class="table">
+   <thead>
+       <tr>
+           <th>ID</th>
+           <th>VALOR ASEGURADO</th>
+           <th>FRANQUICIA</th>
+           <th>COBERTURA</th>
+           <th>FECHA DE INICIO</th>
+           <th>FECHA DE FIN</th>
+           <th>VEHICULO ID</th>
+           <th>ACCIÓN</th>
+       </tr>
+   </thead>
+   <tbody>
+       @foreach (var poliza in _lista)
+       {
+           <tr>
+               <td>@poliza.Id</td>
+               <td>@poliza.ValorAsegurado</td>
+               <td>@poliza.Franquicia</td>
+               <td>@poliza.Cobertura</td>
+               <td>@poliza.FechaInicio.ToShortDateString()</td>
+               <td>@poliza.FechaFin.ToShortDateString()</td>
+               <td>@poliza.VehiculoId</td>
+               <td>
+                    <button class="btn btn-primary" @onclick="()=>ModificarPoliza(poliza)">
+                        <span class="oi oi-pencil"></span>
+                    </button>
+                    <button class="btn btn-danger" @onclick="()=>ConfirmarEliminacion(poliza)">
+                        <span class="oi oi-trash"></span>
+                    </button>
+                </td>
+           </tr>
+       }
+   </tbody>
+</table>
+
+@code {
+    List<Poliza> _lista = new List<Poliza>();
+    protected override void OnInitialized()
+    {
+        _lista = ListarPolizaUseCase.Ejecutar();
+    }
+
+    DialogoConfirmacion dialogo = null!;
+    Poliza? _PolizaParaEliminar = null;
+
+    private void ModificarPoliza(Poliza poliza)
+    {
+        Navegador.NavigateTo($"poliza/{poliza.Id}");
+    }
+
+    private void ConfirmarEliminacion(Poliza poliza)
+    {
+        _PolizaParaEliminar = poliza;
+        dialogo.Mensaje = $"¿Desea eliminar la poliza de id {poliza.Id}?";
+        dialogo.Mostrar();
+    }
+    private void Eliminar()
+    {
+        if (_PolizaParaEliminar != null)
+        {
+            EliminarPolizaUseCase.Ejecutar(_PolizaParaEliminar.Id);
+            _lista = ListarPolizaUseCase.Ejecutar();
+        }
+    }
+}
